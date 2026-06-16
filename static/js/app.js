@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-btn');
     const refreshIcon = refreshBtn.querySelector('svg');
     const releaseFeedEl = document.getElementById('release-feed');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
     
     // Composer DOM Elements
     const composerPlaceholder = document.getElementById('composer-placeholder');
@@ -162,16 +163,31 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="badge-wrapper">
                                 <span class="badge badge-${typeClass}">${update.type}</span>
                             </div>
-                            <div class="card-selection-indicator">
-                                <svg viewBox="0 0 24 24">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
+                            <div class="card-actions">
+                                <button class="card-copy-btn" title="Copy update to clipboard" aria-label="Copy update to clipboard">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                                <div class="card-selection-indicator">
+                                    <svg viewBox="0 0 24 24">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body">
                             ${update.content_html}
                         </div>
                     `;
+                    
+                    // Copy button click listener
+                    cardEl.querySelector('.card-copy-btn').addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent card selection
+                        navigator.clipboard.writeText(update.content_text);
+                        showToast('Update copied to clipboard!');
+                    });
                     
                     cardEl.addEventListener('click', () => {
                         selectUpdate(update, entry.date, entry.link);
@@ -348,6 +364,50 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Refresh button click listener
     refreshBtn.addEventListener('click', () => fetchReleases(true));
+    
+    // Export to CSV button click listener
+    exportCsvBtn.addEventListener('click', exportToCSV);
+    
+    // CSV Export helper
+    function exportToCSV() {
+        const rows = [];
+        // Headers
+        rows.push(['Date', 'Type', 'Content Text', 'Link']);
+        
+        feedData.entries.forEach(entry => {
+            entry.updates.forEach(upd => {
+                if (matchesFilter(upd, entry.date)) {
+                    // Escape values to comply with standard RFC 4180
+                    const dateEscaped = `"${entry.date.replace(/"/g, '""')}"`;
+                    const typeEscaped = `"${upd.type.replace(/"/g, '""')}"`;
+                    const contentEscaped = `"${upd.content_text.replace(/"/g, '""')}"`;
+                    const linkEscaped = `"${entry.link.replace(/"/g, '""')}"`;
+                    rows.push([dateEscaped, typeEscaped, contentEscaped, linkEscaped]);
+                }
+            });
+        });
+        
+        if (rows.length <= 1) {
+            showToast('No releases to export!');
+            return;
+        }
+        
+        // Assemble CSV file
+        const csvContent = rows.map(r => r.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        // Define file name dynamically based on active filter
+        const filterName = currentFilter.toUpperCase();
+        link.setAttribute("href", url);
+        link.setAttribute("download", `BigQuery_Releases_${filterName}.csv`);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('CSV downloaded successfully!');
+    }
     
     // Toast Notification System
     let toastTimeout;
