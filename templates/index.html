@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Radar - Latest Google Cloud Updates</title>
+    <meta name="description" content="Stay updated with the latest Google Cloud BigQuery release notes. Select updates, edit summaries, and share them directly on X (Twitter).">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Link Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header>
+            <div class="header-title-area">
+                <h1>
+                    <!-- Database/BigQuery themed SVG icon -->
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                        <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path>
+                    </svg>
+                    BigQuery Release Radar
+                </h1>
+                <p>Track, filter, and share the latest release updates and features for Google Cloud BigQuery.</p>
+            </div>
+            
+            <div class="header-actions">
+                <button id="refresh-btn" class="btn btn-secondary btn-icon" title="Refresh Release Notes" aria-label="Refresh release notes">
+                    <!-- Refresh Icon -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Toolbar: Search and Category Filters -->
+        <section class="toolbar" aria-label="Filters and Search">
+            <div class="search-wrapper">
+                <span class="search-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input type="text" id="search-input" class="search-input" placeholder="Search releases by keywords..." aria-label="Search release notes">
+            </div>
+            
+            <div class="filters-wrapper" id="filters-container">
+                <button class="filter-pill active" data-filter="all" id="filter-all">All Updates</button>
+                <button class="filter-pill" data-filter="feature" id="filter-feature">Features</button>
+                <button class="filter-pill" data-filter="changed" id="filter-changed">Changes</button>
+                <button class="filter-pill" data-filter="issue" id="filter-issue">Issues</button>
+                <button class="filter-pill" data-filter="deprecated" id="filter-deprecated">Deprecated</button>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-grid">
+            <!-- Left Column: Releases Feed -->
+            <section class="release-feed-section" aria-label="Release Notes Feed">
+                <div id="release-feed" class="release-feed">
+                    <!-- Loaded dynamically via JavaScript -->
+                </div>
+            </section>
+
+            <!-- Right Column: Tweet Composer -->
+            <aside class="composer-section" aria-label="Tweet Composer">
+                <div id="composer-sidebar" class="composer-sidebar">
+                    <div class="composer-header">
+                        <h2>
+                            <!-- X/Twitter New Logo SVG -->
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                            </svg>
+                            Share on X
+                        </h2>
+                    </div>
+
+                    <!-- State 1: Placeholder (No selection) -->
+                    <div id="composer-placeholder" class="composer-placeholder">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <p>Select any release note update from the feed to draft a tweet.</p>
+                    </div>
+
+                    <!-- State 2: Active Composer -->
+                    <div id="composer-form" class="composer-form" style="display: none;">
+                        <span id="preview-source-badge" class="preview-source-badge">
+                            <!-- Pre-filled dynamically -->
+                        </span>
+                        
+                        <div class="textarea-wrapper">
+                            <textarea id="composer-textarea" class="composer-textarea" placeholder="Compose your tweet..." aria-label="Tweet draft text"></textarea>
+                        </div>
+                        
+                        <div class="composer-meta">
+                            <span class="preview-label">Draft Status</span>
+                            <div class="char-counter">
+                                <span id="char-count">280</span>
+                                <svg width="24" height="24" class="progress-ring">
+                                    <circle stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="transparent" r="9" cx="12" cy="12"/>
+                                    <circle id="char-progress" stroke="var(--twitter-blue)" stroke-width="2" fill="transparent" r="9" cx="12" cy="12" class="progress-ring-circle"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="composer-actions">
+                            <button id="btn-copy" class="btn btn-secondary" title="Copy text to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                            <button id="btn-tweet" class="btn btn-primary btn-tweet">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                                </svg>
+                                Tweet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile Drawer Backdrop -->
+    <div id="composer-backdrop" class="composer-backdrop"></div>
+
+    <!-- Copy to Clipboard Success Toast -->
+    <div id="toast" class="toast" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="toast-text">Text copied!</span>
+    </div>
+
+    <!-- Link JS File -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
